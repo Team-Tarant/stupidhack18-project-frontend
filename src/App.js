@@ -1,18 +1,31 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
+import * as classnames from 'classnames';
 import './App.css';
+
+const Header = () => (
+  <header className="header">
+    <p className="header__text">täränt navigator 2000</p>
+  </header>
+);
+
+class Start extends Component {
+  render() {
+    return (
+      <div className={classnames('start', this.props.className)}>
+        <p className="start__hint">Enter your home address and täränt yourself home</p>
+        <input type="text" className="start__address" placeholder="Leppäsuonkatu 11" />
+        <button className="start__button">täränt me home</button>
+      </div>
+    )
+  }
+}
 
 class App extends Component {
   render() {
     return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to React</h1>
-        </header>
-        <p className="App-intro">
-          To get started, edit <code>src/App.js</code> and save to reload.
-        </p>
+      <div className="app">
+        <Header />
+        <Start className="app__start" />
       </div>
     );
   }
