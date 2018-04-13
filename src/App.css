@@ -8,7 +8,9 @@
   background-color: #fd79a8;
   padding: 15px;
   color: white;
+  width: 100%;
   text-align: center;
+  position: fixed;
 }
 
 .header__text {
@@ -57,4 +59,18 @@
   box-sizing: border-box;
   font-size: 18px;
   text-align: left;
+}
+
+.start-coords__hint {
+  display: block;
+  margin: 0 0 1em 0;
+  padding: 0;
+}
+
+.start-coords__coords {
+  display: block;
+  padding: 10px 10px;
+  width: 100%;
+  font-size: 18px;
+  box-sizing: border-box;
 }
