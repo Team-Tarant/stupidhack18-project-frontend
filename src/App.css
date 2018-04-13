@@ -11,6 +11,8 @@
   width: 100%;
   text-align: center;
   position: fixed;
+  height: 58px;
+  box-sizing: border-box;
 }
 
 .header__text {
@@ -21,56 +23,3 @@
   margin: 0;
 }
 
-.app__start {
-  width: 100%;
-  margin: 0;
-  padding-top: 110px;
-}
-
-.start {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  color: white;
-  width: 75%;
-  margin: 0 auto;
-}
-
-.start__hint {
-  display: block;
-  margin: 0 0 1em 0;
-  padding: 0;
-}
-
-.start__address {
-  display: block;
-  padding: 10px 10px;
-  width: 100%;
-  font-size: 18px;
-  box-sizing: border-box;
-}
-
-.start__button {
-  display: block;
-  margin: 0.5em 0 0 0;
-  padding: 10px 10px;
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 18px;
-  text-align: left;
-}
-
-.start-coords__hint {
-  display: block;
-  margin: 0 0 1em 0;
-  padding: 0;
-}
-
-.start-coords__coords {
-  display: block;
-  padding: 10px 10px;
-  width: 100%;
-  font-size: 18px;
-  box-sizing: border-box;
-}
