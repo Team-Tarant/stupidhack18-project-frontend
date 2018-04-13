@@ -19,6 +19,10 @@ const buildApiUrl = (startCoords, destAddress) => {
   return `/api/routes/getRoute?${formatQuery({ startLocation, homeAddress })}`;
 };
 
+const DirectionImage = (imageString) => (
+  <img src={'img/' + imageString + '.jpg'} className="direction__image" alt={imageString}/>
+);
+
 class NavigationView extends Component {
   constructor(props) {
     super(props);
