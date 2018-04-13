@@ -20,7 +20,15 @@ const buildApiUrl = (startCoords, destAddress) => {
 };
 
 const DirectionImage = (imageString) => (
-  <img src={'img/' + imageString + '.jpg'} className="direction__image" alt={imageString}/>
+  <img
+    src={'img/' + imageString + '.jpg'}
+    className="navigation__direction-image"
+    alt={imageString}
+  />
+);
+
+const DirectionText = (textString) => (
+  <p className="navigation__direction-text">{textString}</p>
 );
 
 class NavigationView extends Component {
