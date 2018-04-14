@@ -19,5 +19,6 @@
   "devDependencies": {
     "cross-env": "^5.1.4",
     "eslint": "^4.19.1"
-  }
+  },
+  "proxy": "http://localhost:3001"
 }
