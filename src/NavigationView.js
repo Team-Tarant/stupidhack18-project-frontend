@@ -28,11 +28,11 @@ const TextInstructions = ({ htmlInstructions }) => (
 
 /* ----- example "directionStep" ---------
 "distance": {
-        "text": "0.3 km",
+        "text": "0.3  km",
         "value": 288
     },
     "duration": {
-        "text": "4 mins",
+        "text":  "4 mins",
         "value": 245
     },
     "end_location": {
@@ -76,24 +76,6 @@ const Navigation = ({
     </div>
   );
 };
-
-const clippySays = [
-  {
-    type: 'restaurant',
-    msg:
-      "Hello! Looks like you're trying to get home! I thought you might be hungry so I took you to a restaurant instead. You're welcome!"
-  },
-  {
-    type: 'bar',
-    msg:
-      "Hello! Looks like you're trying to get home! I noticed you might be starting to get sober, so I directed you to a bar! You're welcome!"
-  },
-  {
-    type: 'food',
-    msg:
-      "Hello! Looks like you're trying to get home! I thought you might be hungry so I took you to get some food. You're welcome!"
-  }
-];
 
 class NavigationView extends Component {
   constructor(props) {
@@ -178,8 +160,8 @@ class NavigationView extends Component {
           });
         } else {
           // end of step - go to next step
-          const { locationTypes } = currentStep;
-          this.makeClippySpeak(locationTypes);
+          const { locationTypes, destinationPlaceName } = currentStep;
+          this.makeClippySpeak(locationTypes, destinationPlaceName);
 
           const newStepIdx = stepIndex + 1;
           const newWaypointIdx = 0;
@@ -204,11 +186,30 @@ class NavigationView extends Component {
     setState(newState);
   }
 
-  makeClippySpeak(locationTypes) {
-    if (!this.clippyAgent) {
+  makeClippySpeak(locationTypes, destinationPlaceName) {
+    if (!this.clippyAgent && window.haxx) {
       console.log('no clippy agent!!!');
       return;
     }
+
+    const clippySays = [
+      {
+        type: 'restaurant',
+        msg: `Hello! Looks like you're trying to get home! I thought you might be hungry so I took you to ${destinationPlaceName ||
+          'a restaurant'} instead. You're welcome!`
+      },
+      {
+        type: 'bar',
+        msg: `Hello! Looks like you're trying to get home! I noticed you might be starting to get sober, so I directed you to ${destinationPlaceName ||
+          'a bar'}! You're welcome!`
+      },
+      {
+        type: 'food',
+        msg: `Hello! Looks like you're trying to get home! I thought you might be hungry so I took you to get some food${
+          destinationPlaceName ? ' from ' + destinationPlaceName : ''
+        }. You're welcome!`
+      }
+    ];
 
     let say = {
       type: 'nan',
@@ -225,14 +226,18 @@ class NavigationView extends Component {
 
     console.log('clippy says', say.msg);
 
-    this.clippyAgent.show();
-    this.clippyAgent.speak(say.msg);
-    setTimeout(() => {
-      this.clippyAgent.hide();
-      this.setState({
-        clippyShown: false
-      });
-    }, 7000);
+    if (window.haxx) {
+      if (!this.clippyShownIsForReal) {
+        this.clippyAgent.show();
+        this.clippyShownIsForReal = true;
+      }
+      this.clippyAgent.show();
+      this.clippyAgent.moveTo(300, 500);
+      this.clippyAgent.speak(say.msg);
+      setTimeout(() => {}, 10000);
+    } else {
+      window.alert(say.msg);
+    }
   }
 
   handleGpsUpdate({ coords }) {
@@ -271,41 +276,53 @@ class NavigationView extends Component {
   }
 
   componentDidMount() {
-    window.clippy.load('Clippy', agent => {
-      this.clippyAgent = agent;
+    window.addEventListener('keyup', e => {
+      if (e.keyCode === 39) {
+        this.debugMoveToCurrentWaypointsEnd();
+      }
     });
+
+    setTimeout(() => {
+      window.clippy.load('Clippy', agent => {
+        this.clippyAgent = agent;
+      });
+    }, 1000);
 
     const { startCoords, destinationAddress } = this.props;
     fetch(Utils.buildApiUrl(startCoords, destinationAddress))
-      .then(res => res.json())
-      .then(data => {
-        const { ok, payload, message } = data;
-        if (!ok) {
-          this.setState({
+              .then(res => res.json())
+              .then(data => {
+                const { ok, payload, message } = data;
+                if (!ok) {
+                  this.setState({
             loading: false,
             error: message
           });
         } else {
-          this.setState({
+                        this.setState({
             steps: payload.steps,
             currentStep: 0,
-            currentWaypoint: 0,
-            loading: false,
+  currentWaypoint: 0,
+  loading: false,
             waitingForGps: true
           });
 
-          const opts = {
-            enableHighAccuracy: true,
-            maximumAge: 30000,
-            timeout: 27000
-          };
-          this.watchposId = navigator.geolocation.watchPosition(
-            this.handleGpsUpdate,
-            err => {
-              alert(err);
-            }, // lol just eat error
-            opts
-          );
+    if (window.haxx) {
+      this.updateDistanceToWaypoint(50);
+    } else {
+      const opts = {
+                     enableHighAccuracy: true,
+        maximumAge: 30000,
+        timeout: 27000
+      };
+            this.watchposId = navigator.geolocation.watchPosition(
+              this.handleGpsUpdate,
+              err => {
+                alert(err);
+              }, // lol just eat error
+              opts
+            );
+          }
         }
       });
   }
@@ -313,33 +330,33 @@ class NavigationView extends Component {
   render() {
     const {
       loading,
-      error,
-      waitingForGps,
-      steps,
-      currentStep,
-      currentWaypoint,
+error,
+waitingForGps,
+steps,
+currentStep,
+currentWaypoint,
       distanceToCurrentWaypointEnd,
-      isNavFinished,
-      clippyShown
-    } = this.state;
+                          isNavFinished,
+                          clippyShown
+                        } = this.state;
 
-    let content = <Loading />;
+                        let content = <Loading />;
 
-    if (isNavFinished) {
-      content = <p className="navigation-view__finished">congrats ur home!</p>;
+                        if (isNavFinished) {
+                          content = <p className="navigation-view__finished">congrats ur home!</p>;
     } else if (!loading) {
       if (error) {
-        content = <Error message={error} />;
-      } else if (waitingForGps) {
-        content = <WaitingForGps />;
-      } else {
-        content = (
+    content = <Error message={error} />;
+  } else if (waitingForGps) {
+    content = <WaitingForGps />;
+  } else {
+    content = (
           <Navigation
-            directionStep={steps[currentStep].directions[currentWaypoint]}
+  directionStep={steps[currentStep].directions[currentWaypoint]}
             distanceToCurrentWaypointEnd={distanceToCurrentWaypointEnd}
-            showDbgBtn={!clippyShown}
-            onDebugBtnClick={this.debugMoveToCurrentWaypointsEnd}
-          />
+                    showDbgBtn={true}
+                    onDebugBtnClick={this.debugMoveToCurrentWaypointsEnd}
+                  />
         );
       }
     }

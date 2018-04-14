@@ -54,24 +54,31 @@ class StartView extends Component {
       timeout: 27000
     };
 
-    /*
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        const { coords } = pos;
+    if (!window.haxx) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const { coords } = pos;
+          this.setState({
+            coords,
+            waitingForCoords: false
+          });
+        },
+        () => {}, // lol just do nothing it it fails
+        opts
+      );
+    } else {
+      if (window.coords) {
+        const [latitude, longitude] = window.coords.split(',').map(parseFloat);
+        this.setState({ coords: { latitude, longitude } });
+      } else {
         this.setState({
-          coords,
-          waitingForCoords: false
+          coords: {
+            latitude: 60.180713700000005,
+            longitude: 24.8327614
+          }
         });
-      },
-      () => {}, // lol just do nothing it it fails
-      opts
-    );*/
-    this.setState({
-      coords: {
-        latitude: 60.180713700000005,
-        longitude: 24.8327614
       }
-    });
+    }
   }
 
   onNavStartRequested() {
@@ -97,7 +104,6 @@ class StartView extends Component {
           className="start__address"
           placeholder="Leppäsuonkatu 11"
           ref={this.onAddressElemRef}
-          value="Otakaari 11"
         />
         <button
           className="start__button"
