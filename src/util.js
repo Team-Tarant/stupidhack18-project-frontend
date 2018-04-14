@@ -11,6 +11,10 @@ export function getDistanceInRandomUnit(distance) {
   };
 }
 
+export function distance(coord1, coord2) {
+  return geolib.getDistance(coord1, coord2);
+}
+
 // assumes query is obj with string keys and values
 const querify = (key, value) => `${key}=${encodeURIComponent(value)}`;
 const formatQuery = query => {
@@ -21,7 +25,8 @@ const formatQuery = query => {
   return queryArray.join('&');
 };
 
-const formatCoords = ({ longitude, latitude }) => `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+const formatCoords = ({ longitude, latitude }) =>
+  `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
 
 export const buildApiUrl = (startCoords, destAddress) => {
   const startLocation = formatCoords(startCoords);
