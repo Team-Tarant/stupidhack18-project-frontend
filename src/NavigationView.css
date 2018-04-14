@@ -1,9 +1,33 @@
 .navigation-view {
-  padding-top: 58px;
+  padding-top: 110px;
 }
 
-.navigation__direction-img {
+.navigation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-.navigation__direction-text {
+.navigation__maneuver-image {
+  flex: 1 1 auto;
+  min-width: 60%;
+  width: 60%;
+  max-width: 1024px;
+}
+
+.navigation__distance {
+  margin: 0.5em 0 0 0;
+  color: white;
+  font-size: 1.5em;
+  flex: 0 1 auto;
+}
+
+.navigation__text-instructions {
+  flex: 0 1 auto;
+  color: white;
+  font-size: 1.25em;
+  margin: 0.5em 0 0 0;
+  padding: 0 1em;
+  word-break: break-all;
 }

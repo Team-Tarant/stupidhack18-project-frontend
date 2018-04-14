@@ -8,19 +8,19 @@ const Loading = () => <p className="loading">plz wait while calculating...</p>;
 const ManeuverImage = ({ maneuver }) => (
   <img
     src={'img/' + maneuver + '.jpg'}
-    className="navigation__direction-image"
+    className="navigation__maneuver-image"
     alt={maneuver}
   />
 );
 
 const Distance = ({ meters }) => {
   const { distance, unit } = Utils.getDistanceInRandomUnit(meters);
-  return <p className="distance">{`${distance.toFixed(1)} ${unit}`}</p>;
+  return <p className="navigation__distance">{`${distance.toFixed(1)} ${unit}`}</p>;
 };
 
 const TextInstructions = ({ htmlInstructions }) => (
   <p
-    className="text-instructions"
+    className="navigation__text-instructions"
     dangerouslySetInnerHTML={{ __html: htmlInstructions }}
   />
 );
@@ -49,6 +49,11 @@ const TextInstructions = ({ htmlInstructions }) => (
     "travel_mode": "WALKING"
 },
 */
+
+const Error = ({ message }) => (
+  <p className="error">{`oops looks like shit broke, ping @cxcorp on telegram: ${message}`}</p>
+);
+
 const Navigation = ({ directionStep }) => {
   const {
     distance,
@@ -63,8 +68,6 @@ const Navigation = ({ directionStep }) => {
       <ManeuverImage maneuver={maneuver || 'unknown'} />
       <Distance meters={distance.value} />
       <TextInstructions htmlInstructions={htmlInstructions} />
-      {`startCoords ${startCoords.lat} - ${startCoords.lng}`}
-      {`endCoords ${endCoords.lat} - ${endCoords.lng}`}
     </div>
   );
 };
@@ -74,6 +77,7 @@ class NavigationView extends Component {
     super(props);
     this.state = {
       loading: true,
+      error: null,
       steps: null,
       currentStep: -1, // steps: start -> mcdonalds -> home
       currentWaypoint: -1 // waypoint: inside step "start -> mcdonalds": they're "turn left after 500m" etc (it's current steps[currentStep].directions[currentWaypoint])
@@ -85,20 +89,29 @@ class NavigationView extends Component {
     fetch(Utils.buildApiUrl(startCoords, destinationAddress))
       .then(res => res.json())
       .then(data => {
-        const { steps } = data;
-        this.setState({
-          steps,
-          currentStep: 0,
-          currentWaypoint: 0,
-          loading: false
-        });
+        const { ok, payload, message } = data;
+        if (!ok) {
+          this.setState({
+            loading: false,
+            error: message
+          });
+        } else {
+          this.setState({
+            steps: payload.steps,
+            currentStep: 0,
+            currentWaypoint: 0,
+            loading: false
+          });
+        }
       });
   }
 
   render() {
-    const { loading, steps, currentStep, currentWaypoint } = this.state;
+    const { loading, error, steps, currentStep, currentWaypoint } = this.state;
     const content = loading ? (
       <Loading />
+    ) : error ? (
+      <Error message={error} />
     ) : (
       <Navigation
         directionStep={steps[currentStep].directions[currentWaypoint]}
