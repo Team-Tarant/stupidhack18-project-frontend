@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import * as classnames from 'classnames';
 import * as Utils from './util';
 import './NavigationView.css';
 
@@ -61,25 +60,40 @@ const WaitingForGps = () => <p className="waiting-for-gps">plz wait for gps</p>;
 const Navigation = ({
   directionStep,
   distanceToCurrentWaypointEnd,
-  onDebugBtnClick
+  onDebugBtnClick,
+  showDbgBtn
 }) => {
-  const {
-    distance,
-    maneuver,
-    html_instructions: htmlInstructions,
-    start_location: startCoords,
-    end_location: endCoords
-  } = directionStep;
+  const { maneuver, html_instructions: htmlInstructions } = directionStep;
 
   return (
     <div className="navigation">
       <ManeuverImage maneuver={maneuver || 'unknown'} />
       <Distance meters={distanceToCurrentWaypointEnd} />
       <TextInstructions htmlInstructions={htmlInstructions} />
-      <button onClick={onDebugBtnClick}>[debug] go to waypoint end</button>
+      <button onClick={onDebugBtnClick} disabled={!showDbgBtn}>
+        [debug] go to waypoint end
+      </button>
     </div>
   );
 };
+
+const clippySays = [
+  {
+    type: 'restaurant',
+    msg:
+      "Hello! Looks like you're trying to get home! I thought you might be hungry so I took you to a restaurant instead. You're welcome!"
+  },
+  {
+    type: 'bar',
+    msg:
+      "Hello! Looks like you're trying to get home! I noticed you might be starting to get sober, so I directed you to a bar! You're welcome!"
+  },
+  {
+    type: 'food',
+    msg:
+      "Hello! Looks like you're trying to get home! I thought you might be hungry so I took you to get some food. You're welcome!"
+  }
+];
 
 class NavigationView extends Component {
   constructor(props) {
@@ -92,14 +106,21 @@ class NavigationView extends Component {
       currentWaypoint: -1, // waypoint: inside step "start -> mcdonalds": they're "turn left after 500m" etc (it's current steps[currentStep].directions[currentWaypoint])
       waitingForGps: false,
 
-      distanceToCurrentWaypointEnd: 0
+      distanceToCurrentWaypointEnd: 0,
+      isNavFinished: false,
+
+      clippyShown: false
     };
     this.watchposId = null;
+    this.clippyAgent = null;
+
     this.handleGpsUpdate = this.handleGpsUpdate.bind(this);
     this.debugMoveToCurrentWaypointsEnd = this.debugMoveToCurrentWaypointsEnd.bind(
       this
     );
     this.updateDistanceToWaypoint = this.updateDistanceToWaypoint.bind(this);
+    this.stopGpsWatch = this.stopGpsWatch.bind(this);
+    this.makeClippySpeak = this.makeClippySpeak.bind(this);
   }
 
   debugMoveToCurrentWaypointsEnd() {
@@ -112,14 +133,28 @@ class NavigationView extends Component {
 
     const currStep = steps[stepIndex];
     const currWaypoint = currStep.directions[waypointIndex];
-    const { end_location: currWayEndCoords } = currWaypoint;
+    const { distance } = currWaypoint;
 
     // enable debug mode :))
-    navigator.geolocation.clearWatch(this.watchposId);
-    this.updateDistanceToWaypoint(0);
+    this.stopGpsWatch();
+
+    // trigger update to waypoint, then update to real distance for show
+    this.updateDistanceToWaypoint(0, () => {
+      this.updateDistanceToWaypoint(distance.value);
+    });
   }
 
-  updateDistanceToWaypoint(distance) {
+  updateDistanceToWaypoint(distance, setStateDoneCallback) {
+    const newState = {
+      waitingForGps: false,
+      distanceToCurrentWaypointEnd: distance
+    };
+
+    // wrap setState to inject the cb
+    const setState = newState => {
+      this.setState(newState, setStateDoneCallback);
+    };
+
     if (distance < 10) {
       // 10 meters away, go to next waypoint
       const {
@@ -127,16 +162,77 @@ class NavigationView extends Component {
         currentStep: stepIndex,
         currentWaypoint: waypointIndex
       } = this.state;
-      const currStep = steps[stepIndex];
 
-      const currWaypoint = currStep.directions[waypointIndex];
+      const currentStep = steps[stepIndex];
+      const isLastWaypointOfStep =
+        waypointIndex === currentStep.directions.length - 1;
+      if (isLastWaypointOfStep) {
+        const isLastStep = stepIndex === steps.length - 1;
+
+        if (isLastStep) {
+          // le end
+          this.stopGpsWatch();
+          return setState({
+            ...newState,
+            isNavFinished: true
+          });
+        } else {
+          // end of step - go to next step
+          const { locationTypes } = currentStep;
+          this.makeClippySpeak(locationTypes);
+
+          const newStepIdx = stepIndex + 1;
+          const newWaypointIdx = 0;
+
+          return setState({
+            ...newState,
+            currentStep: newStepIdx,
+            currentWaypoint: newWaypointIdx,
+            clippyShown: true
+          });
+        }
+      }
+
+      // was not last waypoint, just go to next
+      setState({
+        ...newState,
+        currentWaypoint: waypointIndex + 1
+      });
     }
-    console.log('updateDistanceToWaypoint', distance);
 
-    this.setState({
-      waitingForGps: false,
-      distanceToCurrentWaypointEnd: distance
-    });
+    console.log('updateDistanceToWaypoint', distance);
+    setState(newState);
+  }
+
+  makeClippySpeak(locationTypes) {
+    if (!this.clippyAgent) {
+      console.log('no clippy agent!!!');
+      return;
+    }
+
+    let say = {
+      type: 'nan',
+      msg:
+        'Hello! Looks like you are trying to get home! I took you to a favorite place of mine instead.'
+    };
+    for (const type of locationTypes) {
+      const idx = clippySays.findIndex(say => say.type === type);
+      if (idx !== -1) {
+        say = clippySays[idx];
+        break;
+      }
+    }
+
+    console.log('clippy says', say.msg);
+
+    this.clippyAgent.show();
+    this.clippyAgent.speak(say.msg);
+    setTimeout(() => {
+      this.clippyAgent.hide();
+      this.setState({
+        clippyShown: false
+      });
+    }, 7000);
   }
 
   handleGpsUpdate({ coords }) {
@@ -164,13 +260,21 @@ class NavigationView extends Component {
     this.updateDistanceToWaypoint(distanceToCurrentWaypointEnd);
   }
 
-  componentWillUnmount() {
+  stopGpsWatch() {
     if (this.watchposId !== null) {
       navigator.geolocation.clearWatch(this.watchposId);
     }
   }
 
+  componentWillUnmount() {
+    this.stopGpsWatch();
+  }
+
   componentDidMount() {
+    window.clippy.load('Clippy', agent => {
+      this.clippyAgent = agent;
+    });
+
     const { startCoords, destinationAddress } = this.props;
     fetch(Utils.buildApiUrl(startCoords, destinationAddress))
       .then(res => res.json())
@@ -214,12 +318,16 @@ class NavigationView extends Component {
       steps,
       currentStep,
       currentWaypoint,
-      distanceToCurrentWaypointEnd
+      distanceToCurrentWaypointEnd,
+      isNavFinished,
+      clippyShown
     } = this.state;
 
     let content = <Loading />;
 
-    if (!loading) {
+    if (isNavFinished) {
+      content = <p className="navigation-view__finished">congrats ur home!</p>;
+    } else if (!loading) {
       if (error) {
         content = <Error message={error} />;
       } else if (waitingForGps) {
@@ -229,6 +337,7 @@ class NavigationView extends Component {
           <Navigation
             directionStep={steps[currentStep].directions[currentWaypoint]}
             distanceToCurrentWaypointEnd={distanceToCurrentWaypointEnd}
+            showDbgBtn={!clippyShown}
             onDebugBtnClick={this.debugMoveToCurrentWaypointsEnd}
           />
         );

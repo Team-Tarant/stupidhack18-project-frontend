@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "classnames": "^2.2.5",
+    "clippyjs": "^0.0.3",
     "geolib": "^2.0.24",
     "react": "^16.3.1",
     "react-dom": "^16.3.1",

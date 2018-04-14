@@ -2,6 +2,11 @@
   padding-top: 110px;
 }
 
+.navigation-view__finished {
+  color: white;
+  font-size: 2em;
+}
+
 .navigation {
   display: flex;
   flex-direction: column;
