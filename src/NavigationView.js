@@ -58,7 +58,11 @@ const Error = ({ message }) => (
 
 const WaitingForGps = () => <p className="waiting-for-gps">plz wait for gps</p>;
 
-const Navigation = ({ directionStep, distanceToCurrentWaypointEnd }) => {
+const Navigation = ({
+  directionStep,
+  distanceToCurrentWaypointEnd,
+  onDebugBtnClick
+}) => {
   const {
     distance,
     maneuver,
@@ -72,6 +76,7 @@ const Navigation = ({ directionStep, distanceToCurrentWaypointEnd }) => {
       <ManeuverImage maneuver={maneuver || 'unknown'} />
       <Distance meters={distanceToCurrentWaypointEnd} />
       <TextInstructions htmlInstructions={htmlInstructions} />
+      <button onClick={onDebugBtnClick}>[debug] go to waypoint end</button>
     </div>
   );
 };
@@ -91,21 +96,47 @@ class NavigationView extends Component {
     };
     this.watchposId = null;
     this.handleGpsUpdate = this.handleGpsUpdate.bind(this);
-    this.debugMoveToWaypointsEnd = this.debugMoveToWaypointsEnd.bind(this);
+    this.debugMoveToCurrentWaypointsEnd = this.debugMoveToCurrentWaypointsEnd.bind(
+      this
+    );
+    this.updateDistanceToWaypoint = this.updateDistanceToWaypoint.bind(this);
   }
 
-  debugMoveToWaypointsEnd() {
+  debugMoveToCurrentWaypointsEnd() {
     const {
       steps,
       currentStep: stepIndex,
       currentWaypoint: waypointIndex
     } = this.state;
+    console.log('debugMoveToCurrentWaypointsEnd');
 
     const currStep = steps[stepIndex];
     const currWaypoint = currStep.directions[waypointIndex];
     const { end_location: currWayEndCoords } = currWaypoint;
-    
 
+    // enable debug mode :))
+    navigator.geolocation.clearWatch(this.watchposId);
+    this.updateDistanceToWaypoint(0);
+  }
+
+  updateDistanceToWaypoint(distance) {
+    if (distance < 10) {
+      // 10 meters away, go to next waypoint
+      const {
+        steps,
+        currentStep: stepIndex,
+        currentWaypoint: waypointIndex
+      } = this.state;
+      const currStep = steps[stepIndex];
+
+      const currWaypoint = currStep.directions[waypointIndex];
+    }
+    console.log('updateDistanceToWaypoint', distance);
+
+    this.setState({
+      waitingForGps: false,
+      distanceToCurrentWaypointEnd: distance
+    });
   }
 
   handleGpsUpdate({ coords }) {
@@ -128,10 +159,9 @@ class NavigationView extends Component {
       { latitude: currWayEndCoords.lat, longitude: currWayEndCoords.lng }
     );
 
-    this.setState({
-      distanceToCurrentWaypointEnd: distanceToCurrentWaypointEnd,
-      waitingForGps: false
-    });
+    console.log('gps update');
+
+    this.updateDistanceToWaypoint(distanceToCurrentWaypointEnd);
   }
 
   componentWillUnmount() {
@@ -199,6 +229,7 @@ class NavigationView extends Component {
           <Navigation
             directionStep={steps[currentStep].directions[currentWaypoint]}
             distanceToCurrentWaypointEnd={distanceToCurrentWaypointEnd}
+            onDebugBtnClick={this.debugMoveToCurrentWaypointsEnd}
           />
         );
       }
