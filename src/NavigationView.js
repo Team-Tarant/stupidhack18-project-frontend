@@ -1,23 +1,28 @@
 import React, { Component } from 'react';
 import * as classnames from 'classnames';
+import * as Utils from './util';
 import './NavigationView.css';
 
-// assumes query is obj with string keys and values
-const querify = (key, value) => `${key}=${encodeURIComponent(value)}`;
-const formatQuery = query => {
-  const queryArray = Object.keys(query).reduce((acc, key) => {
-    const value = query[key];
-    return [...acc, querify(key, value)];
-  }, []);
-  return queryArray.join('&');
+const Distance = ({ meters }) => {
+  const { distance, unit } = Utils.getDistanceInRandomUnit(meters);
+  return <p className="distance">{`${distance.toFixed(1)} ${unit}`}</p>;
 };
 
-const formatCoords = ({ longitude, latitude }) => `${latitude},${longitude}`;
-const buildApiUrl = (startCoords, destAddress) => {
-  const startLocation = formatCoords(startCoords);
-  const homeAddress = destAddress;
-  return `/api/routes/getRoute?${formatQuery({ startLocation, homeAddress })}`;
-};
+const Loading = () => <p className="loading">plz wait while calculating...</p>;
+
+const Instructions = ({ waypoint }) => {};
+
+const DirectionImage = imageString => (
+  <img
+    src={'img/' + imageString + '.jpg'}
+    className="direction__image"
+    alt={imageString}
+  />
+);
+
+const DirectionText = (textString) => (
+  <p className="navigation__direction-text">{textString}</p>
+);
 
 const DirectionImage = (imageString) => (
   <img
@@ -34,22 +39,33 @@ const DirectionText = (textString) => (
 class NavigationView extends Component {
   constructor(props) {
     super(props);
-    this.state = { loading: true };
+    this.state = {
+      loading: true,
+      steps: null,
+      currentStep: -1, // steps: start -> mcdonalds -> home
+      currentWaypoint: -1 // waypoint: inside step "start -> mcdonalds": they're "turn left after 500m" etc
+    };
   }
 
   componentDidMount() {
     const { startCoords, destinationAddress } = this.props;
-    alert(buildApiUrl(startCoords, destinationAddress));
-    // fetch(buildApiUrl(startCoords, destinationAddress));
+    fetch(Utils.buildApiUrl(startCoords, destinationAddress))
+      .then(res => res.json())
+      .then(data => {
+        const { steps } = data;
+        this.setState({
+          steps,
+          currentStep: 0,
+          currentWaypoint: 0,
+          loading: false
+        });
+      });
   }
 
   render() {
-    return (
-      <div className="navigation-view">
-        {this.props.startCoords.longitude}
-        {` - ${this.props.destinationAddress}`}
-      </div>
-    );
+    const content = this.state.loading ? <Loading /> : null;
+
+    return <div className="navigation-view">{content}</div>;
   }
 }
 

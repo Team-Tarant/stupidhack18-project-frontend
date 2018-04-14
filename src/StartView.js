@@ -54,6 +54,7 @@ class StartView extends Component {
       timeout: 27000
     };
 
+    /*
     navigator.geolocation.getCurrentPosition(
       pos => {
         const { coords } = pos;
@@ -64,8 +65,12 @@ class StartView extends Component {
       },
       () => {}, // lol just do nothing it it fails
       opts
-    );
-    this.setState({ waitingForCoords: true });
+    );*/
+    this.setState({ coords: {
+      //°, °
+      latitude: 60.180713700000005,
+      longitude: 24.8327614
+    } });
   }
 
   onNavStartRequested() {
